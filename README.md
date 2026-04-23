@@ -374,12 +374,11 @@ All required test cases passed successfully.
 
 ## Video Demonstration
 
-**Blackboard Submission:** Video uploaded separately as required by the coursework instructions.
+**Video Link:** 
 
 ---
 
 ## Author
 
-**Senthan Kausian**
-University of Westminster
-Student ID: **W2120632**
+Name: **Senthan Kausian**
+Student ID: **w2120632**
