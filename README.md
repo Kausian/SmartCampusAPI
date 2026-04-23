@@ -299,11 +299,11 @@ curl -X GET http://localhost:8080/SmartCampusAPI/api/v1/debug/error
 
 ### Part 1 - Service Architecture and Setup
 
-#### 1. Resource lifecycle and synchronization
+#### 1. Question: In your report, explain the default lifecycle of a JAX-RS Resource class. Is a new instance instantiated for every incoming request, or does the runtime treat it as a singleton? Elaborate on how this architectural decision impacts the way you manage and synchronize your in-memory data structures $(maps/lists)$ to prevent data loss or race conditions.
 
 By default, a JAX-RS resource class is typically request-scoped, which means the runtime creates a new resource instance for each incoming request. This behaviour helps avoid shared mutable state inside resource classes themselves. However, this project stores data in shared in-memory collections inside a singleton-style `DataStore`, so thread safety still matters. To prevent race conditions and inconsistent updates, synchronized blocks are used around critical operations such as creating rooms, creating sensors, deleting rooms, and adding readings. This ensures that concurrent requests do not corrupt the shared `HashMap` and `ArrayList` structures.
 
-#### 2. Why hypermedia is valuable in RESTful APIs
+#### 2. Question: Why is the provision of ”Hypermedia” (links and navigation within responses) considered a hallmark of advanced RESTful design (HATEOAS)? How does this approach benefit client developers compared to static documentation?
 
 Hypermedia improves RESTful design because the API response itself tells clients where they can go next instead of forcing them to rely entirely on static external documentation. In this project, the discovery endpoint returns links to the main collections such as rooms and sensors. This approach helps client developers by making the API more self-descriptive, easier to explore, and easier to evolve over time if endpoints change or expand.
 
@@ -311,11 +311,11 @@ Hypermedia improves RESTful design because the API response itself tells clients
 
 ### Part 2 - Room Management
 
-#### 1. Returning only IDs vs full room objects
+#### 1.  Question: When returning a list of rooms, what are the implications of returning only IDs versus returning the full room objects? Consider network bandwidth and client side processing.
 
 Returning only room IDs reduces response size and saves network bandwidth, especially if there are many rooms. It is efficient when the client only needs a list of identifiers and will later request details for selected rooms. Returning full room objects is more convenient for clients because all the useful room metadata is available immediately, which reduces the need for extra requests. In this project, full room objects are returned because they improve usability and make the API easier to test and consume, while the payload remains small enough for the coursework scale.
 
-#### 2. Is DELETE idempotent?
+#### 2. Question: Is the DELETE operation idempotent in your implementation? Provide a detailed justification by describing what happens if a client mistakenly sends the exact same DELETE request for a room multiple times.
 
 Yes, DELETE is treated as idempotent in the sense that deleting the same target repeatedly does not create additional side effects after the first successful deletion. In this implementation, the first successful DELETE removes the room and returns a success response. If the client sends the same DELETE again, the room no longer exists, so the API returns `404 Not Found`. The resource state does not change after the first deletion, which means the operation remains idempotent from a REST perspective.
 
@@ -323,11 +323,11 @@ Yes, DELETE is treated as idempotent in the sense that deleting the same target 
 
 ### Part 3 - Sensor Operations and Linking
 
-#### 1. What happens if the client sends the wrong content type?
+#### 1. Question: We explicitly use the @Consumes (MediaType.APPLICATION_JSON) annotation on the POST method. Explain the technical consequences if a client attempts to send data in a different format, such as text/plain or application/xml. How does JAX-RS handle this mismatch?
 
 The `@Consumes(MediaType.APPLICATION_JSON)` annotation tells JAX-RS that the POST endpoint only accepts JSON request bodies. If a client sends data using a different media type such as `text/plain` or `application/xml`, JAX-RS will reject the request because the request content does not match the declared consumption type. In practice, this protects the API from unsupported input formats and ensures the method only processes data it can correctly deserialize into Java objects.
 
-#### 2. Why query parameters are better for filtering
+#### 2. You implemented this filtering using @QueryParam. Contrast this with an alternative design where the type is part of the URL path (e.g., /api/vl/sensors/type/CO2). Why is the query parameter approach generally considered superior for filtering and searching collections?
 
 Using `@QueryParam` for filtering is generally better because filtering does not identify a different resource; it only narrows down a collection. The endpoint `/sensors?type=CO2` clearly means “give me the sensors collection, filtered by type.” In contrast, a path like `/sensors/type/CO2` makes the filter look like a completely different hierarchical resource. Query parameters are more flexible, more expressive for optional search criteria, and align better with common REST design practices.
 
@@ -335,7 +335,7 @@ Using `@QueryParam` for filtering is generally better because filtering does not
 
 ### Part 4 - Deep Nesting with Sub-Resources
 
-#### 1. Benefits of the sub-resource locator pattern
+#### 1. Question: Discuss the architectural benefits of the Sub-Resource Locator pattern. How does delegating logic to separate classes help manage complexity in large APIs compared to defining every nested path (e.g., sensors/{id}/readings/{rid}) in one massive controller class?
 
 The sub-resource locator pattern keeps the API modular by delegating nested resource logic to a dedicated class. In this project, `SensorResource` handles sensor-level operations, while `SensorReadingResource` handles the readings that belong to a specific sensor. This separation makes the code easier to maintain, easier to test, and easier to extend. Without sub-resources, one large controller class would become crowded with unrelated methods and nested path handling logic, which would reduce clarity and increase complexity.
 
@@ -343,11 +343,12 @@ The sub-resource locator pattern keeps the API modular by delegating nested reso
 
 ### Part 5 - Advanced Error Handling and Exception Mapping
 
-#### 1. Why 422 is more accurate than 404 in this case
+#### 1. Question: Why is HTTP 422 often considered more semantically accurate than a standard 404 when the issue is a missing reference inside a valid JSON payload?
+
 
 HTTP 422 is more semantically accurate because the overall request is syntactically valid and the target endpoint exists, but one value inside the JSON body is invalid. In this coursework, the sensor creation request is sent to a valid endpoint and the JSON format is correct, but the referenced `roomId` does not exist. A `404 Not Found` usually refers to the requested URI itself not existing, while `422 Unprocessable Entity` better expresses that the server understood the request but could not process the contained data.
 
-#### 2. Risks of exposing Java stack traces
+#### 2. Question: From a cybersecurity standpoint, explain the risks associated with exposing internal Java stack traces to external API consumers. What specific information could an attacker gather from such a trace?
 
 Exposing raw Java stack traces is a security risk because they reveal internal technical details about the application. An attacker could learn package names, class names, file names, framework behaviour, server structure, and the exact location of failures. This information can be used to map the internal design of the system and identify weak points for targeted attacks. By returning a generic JSON error through a global exception mapper, this project avoids leaking sensitive implementation details to external clients.
 
