@@ -355,6 +355,7 @@ Exposing raw Java stack traces is a security risk because they reveal internal t
 #### 3. Question: Why is it advantageous to use JAX-RS filters for cross-cutting concerns like logging, rather than manually inserting Logger.info() statements inside every single resource method?
 
 In this project, API observability is implemented using a custom JAX-RS filter that handles both incoming requests and outgoing responses. The request filter logs the HTTP method and request URI for every incoming API call, while the response filter logs the final HTTP status code returned to the client. Using JAX-RS filters for logging is advantageous because logging is a cross-cutting concern that applies across the whole API. Centralising it inside filters avoids duplicating Logger.info() statements in every resource method, keeps the resource classes cleaner, improves maintainability, and makes it easier to apply consistent logging behaviour throughout the application.
+
 ---
 
 ## Testing Summary
